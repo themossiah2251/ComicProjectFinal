@@ -1,0 +1,230 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model ComicProjectFinal.Models.DTO.ProductDisplayModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (SignInManager.IsSignedIn(User))
+{
+    if (User.IsInRole("Admin"))
+    {
+        <h1>Hi Admin</h1>
+    }
+    <div class="my-2">
+        <form asp-action="Index" method="get" class="row row-cols-lg-auto g-3 align-items-center">
+            <div class="col-12">
+                <label class="visually-hidden" for="categoryId">Category</label>
+                <select class="form-select" id="categoryId" name="categoryId">
+                    <option selected>Choose...</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.CategoryId">@category.CategoryName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-12">
+                <label class="visually-hidden" for="sterm">Search by title</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="sterm" name="sterm" placeholder="Search by title">
+                </div>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="/Home/Index" class="btn btn-dark">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="w-100 d-flex flex-wrap mt-3">
+        @foreach (var product in Model.Products)
+        {
+            <div class="card mx-2 mb-4" style="width: 15rem;">
+                <img src="@Url.Content($"~/images/{product.Images}")" class="card-img-top" alt="@product.ProductName">
+
+                <div class="card-body">
+                    <h5 class="card-title">@product.ProductName</h5>
+                    <p class="card-text">
+                  
+                        Price: @(product.Price?.ToString("C"))
+                    </p>
+
+                    <button type="button" class="btn btn-primary view-product"
+                            data-bs-toggle="modal"
+                            data-bs-target="#productModal"
+                            data-product-id="@product.ProductsId"
+                            data-product-image="@Url.Content($"~/images/{product.Images}")"
+                            data-product-name="@product.ProductName"
+                            data-product-brand="@product.Brands?.BrandName"
+                            data-product-category="@product.Categories?.CategoryName"
+                            data-product-price="@product.Price?.ToString("C")">
+                        View Product
+                    </button>
+                    <button type="button" class="btn btn-success add-to-cart"
+                            data-product-id="@product.ProductsId">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalProductImage" src="" class="card-img-top" alt="Product Image">
+                    <p id="modalProductName"></p>
+                    <p id="modalProductBrand"></p>
+                    <p id="modalProductCategory"></p>
+                    <p id="modalProductPrice"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success add-to-cart" id="" data-product-id="modalAddToCart" data-quantity="1">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+else
+{
+    // Content for non-authenticated users
+    <style>
+        .carousel-container {
+            max-width: 600px; /* Adjust this to change the width of the carousel */
+            margin: auto; /* This centers the carousel horizontally */
+        }
+        .carousel-item img {
+            height: 650px; /* Smaller height for a smaller carousel */
+            object-fit: picture;
+        }
+
+        .carousel-control-next-icon, .carousel-control-prev-icon {
+            background-size: 50%; /* Smaller control icons */
+        }
+
+        .carousel-indicators [data-bs-target] {
+            width: 20px; /* Smaller indicator dots */
+            height: 2px; /* Smaller indicator dots */
+        }
+
+    </style>
+    <div class="jumbotron">
+        <h1>Welcome to our store!</h1>
+        <p>Discover our collection of amazing products. Register or login now!</p>
+        <a href="/Identity/Account/Login" class="btn btn-primary">Login</a>
+        <a href="/Identity/Account/Register" class="btn btn-secondary">Register</a>
+    </div>
+
+    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+        <ol class="carousel-indicators">
+            @for (int i = 0; i < Model.Products.Count(); i++)
+            {
+                <li data-bs-target="#productCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></li>
+            }
+        </ol>
+
+
+        <div class="carousel-inner">
+            @for (int i = 0; i < Model.Products.Count(); i++)
+            {
+                <div class="carousel-item @(i == 0 ? "active" : "")">
+                    <img src="@Url.Content($"~/images/{Model.Products.ElementAt(i).Images}")" class="d-block w-100" alt="...">
+                </div>
+            }
+        </div>
+
+        <a class="carousel-control-prev" href="#productCarousel" role="button" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#productCarousel" role="button" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </a>
+    </div>
+
+}
+@section Scripts {
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var myCarouselElement = document.querySelector('#productCarousel');
+            var carousel = new bootstrap.Carousel(myCarouselElement, {
+                interval: 5000, // Adjusting interval to 5000ms or 5 seconds for demonstration
+                wrap: true
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            // Function to add an item to the cart
+            async function addToCart(productId, quantity) {
+                try {
+                    let response = await fetch(`/Cart/AddItem?productId=${productId}&quantity=${quantity}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        // Add any necessary CSRF tokens here
+                    });
+
+                    if (response.ok) {
+                        let result = await response.json();
+                        alert('Item added to cart!');
+                        $('#cartCount').text(result.newCartCount);
+                    } else {
+                        alert('Error adding item to cart.');
+                    }
+                } catch (error) {
+                    console.error('Error adding item to cart:', error);
+                    alert('Error adding item to cart.');
+                }
+            }
+
+            // Event handler for clicking the 'Add to Cart' button
+            $('body').on('click', '.add-to-cart', function () {
+                let productId = $(this).data('product-id');
+                let quantity = $(this).data('quantity') || 1;  // Assuming a default quantity of 1 if not specified
+                addToCart(productId, quantity);
+            });
+
+            // Event handler for opening the modal, which updates the modal's content
+            $('.view-product').on('click', function () {
+                let productId = $(this).data('product-id');
+                let productImage = $(this).data('product-image');
+                let productName = $(this).data('product-name');
+                let productBrand = $(this).data('product-brand');
+                let productCategory = $(this).data('product-category');
+                let productPrice = $(this).data('product-price');
+
+                // Update the modal content
+                $('#modalProductImage').attr('src', productImage).attr('alt', productName);
+                $('#modalProductName').text(productName);
+                $('#modalProductBrand').text(productBrand);
+                $('#modalProductCategory').text(productCategory);
+                $('#modalProductPrice').text(productPrice);
+
+                // Update the 'Add to Cart' button in the modal
+                $('#modalAddToCart').data('product-id', productId).data('quantity', 1);
+            });
+
+            // Since the modal is loaded dynamically, bind the click event after the modal is shown
+            $('#productModal').on('shown.bs.modal', function () {
+                $('#modalAddToCart').off('click').on('click', function () {
+                    let productId = $(this).data('product-id');
+                    let quantity = $(this).data('quantity');
+                    addToCart(productId, quantity);
+                });
+            });
+        });
+    </script>
+    }
